@@ -4,6 +4,115 @@
   "description": "Serverless Workflow specification - common schema",
   "type": "object",
   "definitions": {
+    "expressionMarkup": {
+      "type": "string",
+      "pattern": "^\\$(?!fn:)"
+    },
+    "functionMarkup": {
+      "type": "string",
+      "pattern": "^\\$fn:"
+    },
+    "markup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/expressionMarkup"
+        },
+        {
+          "$ref": "#/definitions/functionMarkup"
+        }
+      ]
+    },
+    "booleanOrMarkup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/expressionMarkup"
+        },
+        {
+          "$ref": "#/definitions/functionMarkup"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "numberOrMarkup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/expressionMarkup"
+        },
+        {
+          "$ref": "#/definitions/functionMarkup"
+        },
+        {
+          "type": "number"
+        }
+      ]
+    },
+    "stringOrMarkup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/expressionMarkup"
+        },
+        {
+          "$ref": "#/definitions/functionMarkup"
+        },
+        {
+          "type": "string",
+          "pattern": "^(?!\\$)"
+        }
+      ]
+    },
+    "arrayOrMarkup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/expressionMarkup"
+        },
+        {
+          "$ref": "#/definitions/functionMarkup"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/anyOrMarkup"
+          }          
+        }
+      ]
+    },
+    "objectOrMarkup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/expressionMarkup"
+        },
+        {
+          "$ref": "#/definitions/functionMarkup"
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/anyOrMarkup"
+          }
+        }
+      ]
+    },
+    "anyOrMarkup": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/booleanOrMarkup"
+        },
+        {
+          "$ref": "#/definitions/numberOrMarkup"
+        },
+        {
+          "$ref": "#/definitions/stringOrMarkup"
+        },
+        {
+          "$ref": "#/definitions/arrayOrMarkup"
+        },
+        {
+          "$ref": "#/definitions/objectOrMarkup"
+        }
+      ]
+    },
     "metadata": {
       "type": "object",
       "description": "Metadata information",

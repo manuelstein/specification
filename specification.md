@@ -240,8 +240,8 @@ The workflow data output is the data output of the last executed workflow state.
 ```json
 {
     "stateDataFilter": {
-      "input": "$.orders",
-      "output": "$.provisionedOrders"
+      "input": "${.orders}",
+      "output": "${.provisionedOrders}"
     }
 }
 ```
@@ -251,8 +251,8 @@ The workflow data output is the data output of the last executed workflow state.
 
 ```yaml
 stateDataFilter:
-  input: "$.orders"
-  output: "$.provisionedOrders"
+  input: "${.orders}"
+  output: "${.provisionedOrders}"
 ```
 
 </td>
@@ -372,9 +372,9 @@ The second way would be to directly filter only the "veggie like" vegetables wit
 ```json
 {
   "actionDataFilter": {
-    "fromStateData": "$.language", 
-    "results": "$.results.greeting",
-    "toStateData": "$.finalgreeting"
+    "fromStateData": "${.language}", 
+    "results": "${.results.greeting}",
+    "toStateData": "${.finalgreeting}"
   }
 }
 ```
@@ -384,9 +384,9 @@ The second way would be to directly filter only the "veggie like" vegetables wit
 
 ```yaml
 actionDataFilter:
-  fromStateData: "$.language"
-  results: "$.results.greeting"
-  toStateData: "$.finalgreeting"
+  fromStateData: "${.language}"
+  results: "${.results.greeting}"
+  toStateData: "${.finalgreeting}"
 ```
 
 </td>
@@ -460,8 +460,8 @@ and have the following action definition:
     {  
        "functionRef": "breadAndPastaTypesFunction",
        "actionDataFilter": {
-          "results": "$[ .breads[0], .pasta[1] ]",
-          "toStateData": "$.itemsToBuyAtStore"
+          "results": "${[ .breads[0], .pasta[1] ]}",
+          "toStateData": "${.itemsToBuyAtStore}"
        }
     }
  ]
@@ -502,7 +502,7 @@ into. With this, after our action executes the state data would be:
 ```json
 {
     "eventDataFilter": {
-       "data": "$.data.results"
+       "data": "${.data.results}"
     }
 }
 ```
@@ -512,7 +512,7 @@ into. With this, after our action executes the state data would be:
 
 ```yaml
 eventDataFilter:
-  data: "$.data.results"
+  data: "${.data.results}"
 ```
 
 </td>
@@ -561,29 +561,29 @@ a workflow with a single event state and show how data filters can be combined.
             "onEvents": [{
                 "eventRefs": ["CustomerArrivesEvent"],
                 "eventDataFilter": {
-                    "data": "$.customer",
-                    "toStateData": "$.customerInfo"
+                    "data": "${.customer}",
+                    "toStateData": "${.customerInfo}"
                 },
                 "actions":[
                     {
                         "functionRef": {
                             "refName": "greetingFunction",
                             "arguments": {
-                                "greeting": "$.spanish ",
-                                "customerName": "$.customerInfo.name "
+                                "greeting": "${.spanish }",
+                                "customerName": "${.customerInfo.name }"
                             }
                         },
                         "actionDataFilter": {
-                            "fromStateData": "$.hello",
-                            "results": "$.greetingMessageResult",
-                            "toStateData": "$.finalCustomerGreeting"
+                            "fromStateData": "${.hello}",
+                            "results": "${.greetingMessageResult}",
+                            "toStateData": "${.finalCustomerGreeting}"
                         }
                     }
                 ]
             }],
             "stateDataFilter": {
-                "input": "$.greetings ",
-                "output": "$.finalCustomerGreeting"
+                "input": "${.greetings }",
+                "output": "${.finalCustomerGreeting}"
             },
             "end": true
         }
@@ -1212,15 +1212,17 @@ Which would execute the mutation, creating the object and returning the followin
 }
 ```
 
-Note you can include [expressions](#Workflow-Expressions) in both `arguments` and `selectionSet`:
+Note you can include [expressions](#Workflow-Expressions) in both `arguments` 
+and `selectionSet`. The following example uses JQ string interpolation to 
+generate a valid `selectionSet` string.
 
 ```json
 {
   "refName": "getOnePet",
   "arguments": {
-    "id": "$.petId"
+    "id": "${.petId}"
   },
-  "selectionSet": "$\"{ id, name, age(useDogYears: \\(.isPetADog)) { dateOfBirth, years }\" "
+  "selectionSet": "${ '{ id, name, age(useDogYears: \\(.isPetADog)) { dateOfBirth, years }' }"
 }
 ```
 
@@ -1251,7 +1253,7 @@ Let's take a look at an example of such definitions:
     "type": "expression"
   },
   {
-    "name": "isMinor",
+    "name": " is a minor ?",
     "operation": ".applicant | .age < 18",
     "type": "expression"
   }
@@ -1275,12 +1277,12 @@ Our expression function definitions can now be referenced by workflow states whe
      "dataConditions": [
         {
           "name": "Applicant is adult",
-          "condition": "$fn:isAdult",
+          "condition": "$fn{isAdult}",
           "transition": "ApproveApplication"
         },
         {
           "name": "Applicant is minor",
-          "condition": "$fn:isMinor",
+          "condition": "$fn{ is a minor ?}",
           "transition": "RejectApplication"
         }
      ],
@@ -1322,7 +1324,7 @@ Let's say we have the following workflow definition:
                 {
                     "functionRef": "Increment Count Function",
                     "actionFilter": {
-                        "toStateData": "$.count"
+                        "toStateData": "${.count}"
                     }
                 }
             ],
@@ -1369,12 +1371,36 @@ Expressions are evaluated during execution of the workflow and can be used for t
 - Define any state parameter of the workflow definition.
   Basically any leaf parameter in states can be set by evaluating an expression against the workflow state data at runtime. However, structures like the `actions` array in an [operation state](#Operation-state) can not be generated at runtime, i.e. the workflow definition has to conform to the JSON specification and contain all required elements. The JSON specification explicitly allows expressions where applicable.
 
-An expression can simply be defined using a formatted string that starts with the
-`$` token. All text following the token is evaluated using the workflow's 
-specified [`expressionLang`](#Workflow-Definition-Structure).
+A workflow expression can be defined where it is applied as an _expression string_ 
+or it can be defined as an [expression function definition](#Using-Functions-For-Expression-Evaluation) 
+and then applied using an _expression reference string_.
+
+An _expression string_ starts with the `${` token and ends on `}`. All text 
+between the curly brackets is evaluated using the workflow's specified 
+[`expressionLang`](#Workflow-Definition-Structure).
+Note, that without the closing bracket at the very end of the string, it won't 
+be evaluated as an expression.
+
+A workflow expression can also be defined in an [expression function definition](#Using-Functions-For-Expression-Evaluation) and then applied by reference.
+To reference a expression function, an _expression reference string_ is used that 
+starts with the `$fn{` token and ends with `}`.
+The _expression reference string_ has the format `$fn{<function name>}`, where 
+`<function name>` has to match the user-specified `name` of the defined 
+expression function of `type` `"expression"`.
+
+On the rare occasion that one needs to create a string that literally looks like 
+an _expression string_ or an _expression reference string_, the dollar sign 
+should be repeated. Only if the remainder matches a workflow expression markup,
+the runtime reduces the double dollar signs `$$` to a single dollar sign `$` and 
+refrains from evaluating it as a workflow expression.
+
+```text
+"foo": "$${ this is text in a string starting with '${' and ending with a single '}' }"
+"foo": "$$fn{ this is text in a string starting with '$fn{' and ending with a single '}' }"
+```
 
 The expression language has access to the context data to select/transform 
-content.
+content when processing the workflow expression.
 
 Note that different data filters play a big role as to which parts of the 
 states data are to be used when the expression is evaluated during workflow
@@ -1388,7 +1414,10 @@ e.g. [State Data Filter](#State-data-filters), [Action Data Filter](#Action-data
 parameters if you want to set them using an expression.
 
 The default expression language is [jq](https://stedolan.github.io/jq/).
-This version of the workflow language supports jq [version 1.6](https://github.com/stedolan/jq/releases/tag/jq-1.6) syntax. You can find more information on jq v1.6 in its [manual](https://stedolan.github.io/jq/manual/v1.6/).
+This version of the workflow language supports jq [version 1.6](https://github.com/stedolan/jq/releases/tag/jq-1.6) syntax.
+You can find more information on jq v1.6 in its [manual](https://stedolan.github.io/jq/manual/v1.6/).
+The workflow data that is accessible to the jq expression is passed as the single 
+input document to the jq processor.
 
 Serverless Workflow does not mandate the use of jq and it is possible to use an 
 expression language of your choice with the restriction that a single one must 
@@ -1401,24 +1430,6 @@ your workflow definitions across multiple container/cloud platforms.
 
 All workflow expressions in this document, [specification examples](examples/README.md) as well as [comparisons examples](comparisons/README.md) 
 are written using the default jq syntax.
-
-Workflow expressions have the following format:
-
-```text
-$<expression>
-```
-
-where `<expression>` is an in-line expression.
-
-Expressions can also be defined in an [expression function definition](#Using-Functions-For-Expression-Evaluation).
-To reference a defined [expression function definition](#Using-Functions-For-Expression-Evaluation)
-the expression must have the following format:
-
-```text
-$fn:<function name>
-```
-
-Where `<function name>` is the user-specified `name` of the defined expression function.
 
 #### Expression examples
 
@@ -1459,7 +1470,7 @@ Let's take a look at using an inline expression that sets an input parameter ins
         "functionRef": {
             "refName": "confirmApplicant",
             "parameters": {
-                "applicantName": "$.applicant.name"
+                "applicantName": "${.applicant.name}"
             }
         }
     }
@@ -1495,11 +1506,11 @@ extending the previous example with an `actionDataFilter`:
         "functionRef": {
             "refName": "confirmApplicant",
             "parameters": {
-                "applicantName": "$.applicant.name"
+                "applicantName": "${.applicant.name}"
             },
             "actionDataFilter": {
-              "result": "$.confirmationUuid",
-              "toStateData": "$.applicant.confirmationId"
+              "result": "${.confirmationUuid}",
+              "toStateData": "${.applicant.confirmationId}"
             }
         }
     }
@@ -1526,7 +1537,7 @@ For example let's use another inline expression:
 ```json
 {
    "stateDataFilter": {
-       "output": "$.applicant | {applicant: .name, contactInfo: { email: .email, phone: .phoneNumbers }}"
+       "output": "${.applicant | {applicant: .name, contactInfo: { email: .email, phone: .phoneNumbers }}}"
    }
 }
 ```
@@ -1576,7 +1587,7 @@ Its return type is boolean, so it makes a useful condition:
 ```json
 {
   "dataConditions": [ {
-    "condition": "$fn:IsAdultApplicant",
+    "condition": "${fn{IsAdultApplicant}}",
     "transition": "StartApplication"
   }]
 }
@@ -2358,7 +2369,7 @@ The following is a detailed description of each of the defined states.
             "functionRef": {
                 "refName": "sendTylenolOrder",
                 "arguments": {
-                    "patientid": "$.patientId"
+                    "patientid": "${.patientId}"
                 }
             }
         }]
@@ -2369,7 +2380,7 @@ The following is a detailed description of each of the defined states.
             "functionRef": {
                 "refName": "callNurse",
                 "arguments": {
-                    "patientid": "$.patientId"
+                    "patientid": "${.patientId}"
                 }
             }
         }]
@@ -2380,7 +2391,7 @@ The following is a detailed description of each of the defined states.
             "functionRef": {
                 "refName": "callPulmonologist",
                 "arguments": {
-                    "patientid": "$.patientId"
+                    "patientid": "${.patientId}"
                 }
             }
         }]
@@ -2406,21 +2417,21 @@ onEvents:
   - functionRef:
       refName: sendTylenolOrder
       arguments:
-        patientid: "$.patientId"
+        patientid: "${.patientId}"
 - eventRefs:
   - HighBloodPressure
   actions:
   - functionRef:
       refName: callNurse
       arguments:
-        patientid: "$.patientId"
+        patientid: "${.patientId}"
 - eventRefs:
   - HighRespirationRate
   actions:
   - functionRef:
       refName: callPulmonologist
       arguments:
-        patientid: "$.patientId"
+        patientid: "${.patientId}"
 end:
   terminate: true
 ```
@@ -2488,7 +2499,7 @@ the state should transition to the next state or can end the workflow execution 
         "functionRef": {
             "refName": "sendTylenolOrder",
             "arguments": {
-                "patientid": "$.patientId"
+                "patientid": "${.patientId}"
             }
         }
     }]
@@ -2505,7 +2516,7 @@ actions:
 - functionRef:
     refName: sendTylenolOrder
     arguments:
-      patientid: "$.patientId"
+      patientid: "${.patientId}"
 ```
 
 </td>
@@ -2533,7 +2544,7 @@ Let's look at the following JSON definition of 'onEvents' to show this:
 				"functionRef": {
 					"refName": "SendTylenolOrder",
 					"arguments": {
-						"patient": "$.patientId"
+						"patient": "${.patientId}"
 					}
 				}
 			},
@@ -2541,7 +2552,7 @@ Let's look at the following JSON definition of 'onEvents' to show this:
 				"functionRef": {
 					"refName": "CallNurse",
 					"arguments": {
-						"patient": "$.patientId"
+						"patient": "${.patientId}"
 					}
 				}
 			}
@@ -2640,7 +2651,7 @@ instance in case it is an end state without performing any actions.
     "functionRef": {
         "refName": "finalizeApplicationFunction",
         "arguments": {
-            "applicantid": "$.applicantId"
+            "applicantid": "${.applicantId}"
         }
     },
     "timeout": "PT15M"
@@ -2655,7 +2666,7 @@ name: Finalize Application Action
 functionRef:
   refName: finalizeApplicationFunction
   arguments:
-    applicantid: "$.applicantId"
+    applicantid: "${.applicantId}"
 timeout: PT15M
 ```
 
@@ -2736,7 +2747,7 @@ it with its `object` type which has the following properties:
 {
     "refName": "finalizeApplicationFunction",
     "arguments": {
-        "applicantid": "$.applicantId"
+        "applicantid": "${.applicantId}"
     }
 }
 ```
@@ -2747,7 +2758,7 @@ it with its `object` type which has the following properties:
 ```yaml
 refName: finalizeApplicationFunction
 arguments:
-  applicantid: "$.applicantId"
+  applicantid: "${.applicantId}"
 ```
 
 </td>
@@ -2766,9 +2777,9 @@ Here is an example of using the `arguments` property:
    "refName": "checkFundsAvailabe",
    "arguments": {
      "account": {
-       "id": "$.accountId"
+       "id": "${.accountId}"
      },
-     "forAmount": "$.payment.amount",
+     "forAmount": "${.payment.amount}",
      "insufficientMessage": "The requested amount is not available."
    }
 }
@@ -2798,7 +2809,7 @@ Here is an example of using the `arguments` property:
 {
    "eventRef": {
       "triggerEventRef": "MakeVetAppointment",
-      "data": "$.patientInfo",
+      "data": "${.patientInfo}",
       "resultEventRef":  "VetAppointmentInfo"
    }
 }
@@ -2810,7 +2821,7 @@ Here is an example of using the `arguments` property:
 ```yaml
 eventRef:
   triggerEventRef: MakeVetAppointment
-  data: "$.patientInfo"
+  data: "${.patientInfo}"
   resultEventRef: VetAppointmentInfo
 ```
 
@@ -3114,7 +3125,7 @@ it with its `object` type which has the following properties:
 {
    "produceEvents": [{
        "eventRef": "produceResultEvent",
-       "data": "$.result.data"
+       "data": "${.result.data}"
    }],
    "nextState": "EvalResultState"
 }
@@ -3126,7 +3137,7 @@ it with its `object` type which has the following properties:
 ```yaml
 produceEvents:
 - eventRef: produceResultEvent
-  data: "$.result.data"
+  data: "${.result.data}"
 nextState: EvalResultState
 ```
 
@@ -3181,7 +3192,7 @@ Transitions allow you to move from one state (control-logic block) to another. F
             "functionRef": {
                 "refName": "sendRejectionEmailFunction",
                 "arguments": {
-                    "customer": "$.customer"
+                    "customer": "${.customer}"
                 }
             }
         }
@@ -3201,7 +3212,7 @@ actions:
 - functionRef:
     refName: sendRejectionEmailFunction
     arguments:
-      customer: "$.customer"
+      customer: "${.customer}"
 end: true
 ```
 
@@ -3328,7 +3339,7 @@ If events defined in event-based conditions do not arrive before the states `eve
 ```json
 {
       "name": "Eighteen or older",
-      "condition": "$.applicant | .age >= 18",
+      "condition": "${.applicant | .age >= 18}",
       "transition": "StartApplication"
 }
 ```
@@ -3338,7 +3349,7 @@ If events defined in event-based conditions do not arrive before the states `eve
 
 ```yaml
 name: Eighteen or older
-condition: "$.applicant | .age >= 18"
+condition: "${.applicant | .age >= 18}"
 transition: StartApplication
 ```
 
@@ -3504,7 +3515,7 @@ Delay state waits for a certain amount of time before transitioning to a next st
                 "functionRef": {
                     "refName": "functionNameOne",
                     "arguments": {
-                        "order": "$.someParam"
+                        "order": "${.someParam}"
                     }
                 }
             }
@@ -3517,7 +3528,7 @@ Delay state waits for a certain amount of time before transitioning to a next st
                   "functionRef": {
                       "refName": "functionNameTwo",
                       "arguments": {
-                          "order": "$.someParam"
+                          "order": "${.someParam}"
                       }
                   }
               }
@@ -3541,13 +3552,13 @@ branches:
   - functionRef:
       refName: functionNameOne
       arguments:
-        order: "$.someParam"
+        order: "${.someParam}"
 - name: Branch2
   actions:
   - functionRef:
       refName: functionNameTwo
       arguments:
-        order: "$.someParam"
+        order: "${.someParam}"
 end: true
 ```
 
@@ -3595,7 +3606,7 @@ Exceptions may occur during execution of branches of the Parallel state, this is
               "functionRef": {
                   "refName": "functionNameOne",
                   "arguments": {
-                      "order": "$.someParam"
+                      "order": "${.someParam}"
                   }
               }
           },
@@ -3603,7 +3614,7 @@ Exceptions may occur during execution of branches of the Parallel state, this is
               "functionRef": {
                   "refName": "functionNameTwo",
                   "arguments": {
-                      "order": "$.someParamTwo"
+                      "order": "${.someParamTwo}"
                   }
               }
           }
@@ -3620,11 +3631,11 @@ actions:
 - functionRef:
     refName: functionNameOne
     arguments:
-      order: "$.someParam"
+      order: "${.someParam}"
 - functionRef:
     refName: functionNameTwo
     arguments:
-      order: "$.someParamTwo"
+      order: "${.someParamTwo}"
 ```
 
 </td>
@@ -3921,15 +3932,15 @@ This allows you to test if your workflow behaves properly for cases when there a
 {
     "name": "ProvisionOrdersState",
     "type": "foreach",
-    "inputCollection": "$.orders",
-    "iterationParam": "$.singleorder",
-    "outputCollection": "$.provisionresults",
+    "inputCollection": "${.orders}",
+    "iterationParam": "${.singleorder}",
+    "outputCollection": "${.provisionresults}",
     "actions": [
         {
             "functionRef": {
                 "refName": "provisionOrderFunction",
                 "arguments": {
-                    "order": "$.singleorder"
+                    "order": "${.singleorder}"
                 }
             }
         }
@@ -3943,14 +3954,14 @@ This allows you to test if your workflow behaves properly for cases when there a
 ```yaml
 name: ProvisionOrdersState
 type: foreach
-inputCollection: "$.orders"
-iterationParam: "$.singleorder"
-outputCollection: "$.provisionresults"
+inputCollection: "${.orders}"
+iterationParam: "${.singleorder}"
+outputCollection: "${.provisionresults}"
 actions:
 - functionRef:
     refName: provisionOrderFunction
     arguments:
-      order: "$.singleorder"
+      order: "${.singleorder}"
 ```
 
 </td>
@@ -4032,16 +4043,16 @@ and our workflow is defined as:
   {
       "name":"SendConfirmState",
       "type":"foreach",
-      "inputCollection": "$[.orders[] | select(.completed == true)]",
+      "inputCollection": "${[.orders[] | select(.completed == true)]}",
       "iterationParam": "completedorder",
-      "outputCollection": "$.confirmationresults",
+      "outputCollection": "${.confirmationresults}",
       "actions":[  
       {  
        "functionRef": {
          "refName": "sendConfirmationFunction",
          "arguments": {
-           "orderNumber": "$.completedorder.orderNumber",
-           "email": "$.completedorder.email"
+           "orderNumber": "${.completedorder.orderNumber}",
+           "email": "${.completedorder.email}"
          }
        }
       }],
@@ -4065,15 +4076,15 @@ functions:
 states:
 - name: SendConfirmState
   type: foreach
-  inputCollection: "$[.orders[] | select(.completed == true)]"
+  inputCollection: "${[.orders[] | select(.completed == true)]}"
   iterationParam: completedorder
-  outputCollection: "$.confirmationresults"
+  outputCollection: "${.confirmationresults}"
   actions:
   - functionRef:
       refName: sendConfirmationFunction
       arguments:
-        orderNumber: "$.completedorder.orderNumber"
-        email: "$.completedorder.email"
+        orderNumber: "${.completedorder.orderNumber}"
+        email: "${.completedorder.email}"
   end: true
 ```
 
@@ -4151,7 +4162,7 @@ The results of each parallel action execution are stored as elements in the stat
             "functionRef": {
                 "refName": "callCreditCheckMicroservice",
                 "arguments": {
-                    "customer": "$.customer"
+                    "customer": "${.customer}"
                 }
             }
         },
@@ -4171,7 +4182,7 @@ action:
   functionRef:
     refName: callCreditCheckMicroservice
     arguments:
-      customer: "$.customer"
+      customer: "${.customer}"
 eventRef: CreditCheckCompletedEvent
 timeout: PT15M
 transition: EvaluateDecision
@@ -4470,7 +4481,7 @@ If the end definition is of type `object`, it has the following structure:
     "terminate": true,
     "produceEvents": [{
         "eventRef": "provisioningCompleteEvent",
-        "data": "$.provisionedOrders"
+        "data": "${.provisionedOrders}"
     }]
 }
 ```
@@ -4482,7 +4493,7 @@ If the end definition is of type `object`, it has the following structure:
 terminate: true
 produceEvents:
 - eventRef: provisioningCompleteEvent
-  data: "$.provisionedOrders"
+  data: "${.provisionedOrders}"
 
 ```
 
@@ -4533,9 +4544,9 @@ is reached.
 ```json
 {
     "eventRef": "provisioningCompleteEvent",
-    "data": "$.provisionedOrders",
+    "data": "${.provisionedOrders}",
     "contextAttributes": [{
-         "buyerId": "$.buyerId"
+         "buyerId": "${.buyerId}"
      }]
  }
 ```
@@ -4545,9 +4556,9 @@ is reached.
 
 ```yaml
 eventRef: provisioningCompleteEvent
-data: "$.provisionedOrders"
+data: "${.provisionedOrders}"
 contextAttributes:
-- buyerId: "$.buyerId"
+- buyerId: "${.buyerId}"
 ```
 
 </td>
@@ -4895,8 +4906,8 @@ state it references:
                   "functionRef": {
                     "refName": "DebitCustomerFunction",
                     "arguments": {
-                        "customerid": "$.purchase.customerid",
-                        "amount": "$.purchase.amount"
+                        "customerid": "${.purchase.customerid}",
+                        "amount": "${.purchase.amount}"
                     }
                   }
                 },
@@ -4904,7 +4915,7 @@ state it references:
                   "functionRef": {
                     "refName": "SendPurchaseConfirmationEmailFunction",
                     "arguments": {
-                        "customerid": "$.purchase.customerid"
+                        "customerid": "${.purchase.customerid}"
                     }
                   }
                 }
@@ -4923,8 +4934,8 @@ state it references:
               "functionRef": {
                 "refName": "CreditCustomerFunction",
                 "arguments": {
-                    "customerid": "$.purchase.customerid",
-                    "amount": "$.purchase.amount"
+                    "customerid": "${.purchase.customerid}",
+                    "amount": "${.purchase.amount}"
                 }
               }
             },
@@ -4932,7 +4943,7 @@ state it references:
               "functionRef": {
                 "refName": "SendPurchaseCancellationEmailFunction",
                 "arguments": {
-                    "customerid": "$.purchase.customerid"
+                    "customerid": "${.purchase.customerid}"
                 }
               }
             }
@@ -4955,12 +4966,12 @@ states:
     - functionRef:
         refName: DebitCustomerFunction
         arguments:
-          customerid: "$.purchase.customerid"
-          amount: "$.purchase.amount"
+          customerid: "${.purchase.customerid}"
+          amount: "${.purchase.amount}"
     - functionRef:
         refName: SendPurchaseConfirmationEmailFunction
         arguments:
-          customerid: "$.purchase.customerid"
+          customerid: "${.purchase.customerid}"
   compensatedBy: CancelPurchase
   transition: SomeNextWorkflowState
 - name: CancelPurchase
@@ -4970,12 +4981,12 @@ states:
   - functionRef:
       refName: CreditCustomerFunction
       arguments:
-        customerid: "$.purchase.customerid"
-        amount: "$.purchase.amount"
+        customerid: "${.purchase.customerid}"
+        amount: "${.purchase.amount}"
   - functionRef:
       refName: SendPurchaseCancellationEmailFunction
       arguments:
-        customerid: "$.purchase.customerid"
+        customerid: "${.purchase.customerid}"
 ```
 </td>
 </tr>
@@ -5167,12 +5178,12 @@ Here is an example of using constants in Workflow expressions:
      "dataConditions": [
         {
           "name": "Applicant is adult",
-          "condition": "$.applicant | .age >= $CONST.AGE.MIN_ADULT",
+          "condition": "${.applicant | .age >= $CONST.AGE.MIN_ADULT}",
           "transition": "ApproveApplication"
         },
         {
           "name": "Applicant is minor",
-          "condition": "$.applicant | .age < $CONST.AGE.MIN_ADULT",
+          "condition": "${.applicant | .age < $CONST.AGE.MIN_ADULT}",
           "transition": "RejectApplication"
         }
      ],
@@ -5209,14 +5220,17 @@ Workflow constants should not have access to [Workflow secrets definitions](#Wor
 
 ### Workflow Secrets
 
-Secrets allow you access sensitive information, such as passwords, OAuth tokens, ssh keys, etc
-inside your [Workflow Expressions](#Workflow-Expressions). 
+Secrets allow you access sensitive information, such as passwords, OAuth tokens, ssh keys, etc.
+They can be used in [Workflow Expressions](#Workflow-Expressions).
 
 You can define the names of secrets via the [Workflow top-level "secrets" property](#Workflow-Definition-Structure), 
 for example:
 
 ```json
-"secrets": ["MY_PASSWORD", "MY_STORAGE_KEY", "MY_ACCOUNT"]
+"secrets": {
+  "account_name": "personalaccountname",
+  "account_key": "c3VwZXItc2VjcmV0",
+}
 ```
 
 If secrets are defined in a Workflow definition, runtimes must assure to provide their values
@@ -5228,15 +5242,11 @@ This is reserved namespace that should only be allowed for values defined by the
 Here is an example on how to use secrets and pass them as arguments to a function invocation:
 
 ```json
-"secrets": ["AZURE_STORAGE_ACCOUNT", "AZURE_STORAGE_KEY"],
-
-...
-        
 {
   "refName": "uploadToAzure",
     "arguments": {
-      "account": "$$SECRETS.AZURE_STORAGE_ACCOUNT",
-      "account-key": "$$SECRETS.AZURE_STORAGE_KEY",
+      "account": "${ $SECRETS.account_name }",
+      "account-key": "${ $SECRETS.account_key }",
       ...
     }
   
@@ -5245,7 +5255,6 @@ Here is an example on how to use secrets and pass them as arguments to a functio
 
 Note that secrets can also be used in [expression functions](#Using-Functions-for-Expression-Evaluation).
 
-Secrets are immutable, meaning that workflow expressions are not allowed to change their values.
 
 ### Workflow Metadata
 

@@ -6,11 +6,14 @@
   "definitions": {
     "expressionMarkup": {
       "type": "string",
-      "pattern": "^\\$(?!fn:)"
+      "pattern": "^\\${.*}$"
+    },
+    "jsonpointer": {
+      "$ref": "#/definitions/expressionMarkup"
     },
     "functionMarkup": {
       "type": "string",
-      "pattern": "^\\$fn:"
+      "pattern": "^\\$fn{.*}$"
     },
     "markup": {
       "oneOf": [
@@ -25,10 +28,7 @@
     "booleanOrMarkup": {
       "oneOf": [
         {
-          "$ref": "#/definitions/expressionMarkup"
-        },
-        {
-          "$ref": "#/definitions/functionMarkup"
+          "$ref": "#/definitions/markup"
         },
         {
           "type": "boolean"
@@ -38,10 +38,7 @@
     "numberOrMarkup": {
       "oneOf": [
         {
-          "$ref": "#/definitions/expressionMarkup"
-        },
-        {
-          "$ref": "#/definitions/functionMarkup"
+          "$ref": "#/definitions/markup"
         },
         {
           "type": "number"
@@ -51,10 +48,7 @@
     "stringOrMarkup": {
       "oneOf": [
         {
-          "$ref": "#/definitions/expressionMarkup"
-        },
-        {
-          "$ref": "#/definitions/functionMarkup"
+          "$ref": "#/definitions/markup"
         },
         {
           "type": "string",
@@ -65,10 +59,7 @@
     "arrayOrMarkup": {
       "oneOf": [
         {
-          "$ref": "#/definitions/expressionMarkup"
-        },
-        {
-          "$ref": "#/definitions/functionMarkup"
+          "$ref": "#/definitions/markup"
         },
         {
           "type": "array",
@@ -81,10 +72,7 @@
     "objectOrMarkup": {
       "oneOf": [
         {
-          "$ref": "#/definitions/expressionMarkup"
-        },
-        {
-          "$ref": "#/definitions/functionMarkup"
+          "$ref": "#/definitions/markup"
         },
         {
           "type": "object",

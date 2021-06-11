@@ -1340,11 +1340,11 @@
           "description": "Array or a workflow expression creating an array"
         },
         "outputCollection": {
-          "$ref": "common.json#/definitions/pathMarkup",
+          "$ref": "common.json#/definitions/jsonpointer",
           "description": "Workflow expression specifying a path where an array is created that collects the results of each iteration"
         },
         "iterationParam": {
-          "$ref": "common.json#/definitions/pathMarkup",
+          "$ref": "common.json#/definitions/jsonpointer",
           "description": "Name of the iteration parameter that can be referenced in actions/workflow. For each parallel iteration, this param should contain a unique element of the inputCollection array"
         },
         "max": {
@@ -1705,7 +1705,7 @@
           "description": "Workflow expression that filters the received event/payload (default: '${ . }')"
         },
         "toStateData": {
-          "$ref": "common.json#/definitions/pathMarkup",
+          "$ref": "common.json#/definitions/jsonpointer",
           "description": " Workflow expression that selects a state data element to which the filtered event should be set to. If not specified, denotes, the top-level state data element."
         }
       },
@@ -1724,7 +1724,7 @@
           "description": "Workflow expression that filters the actions data results"
         },
         "toStateData": {
-          "$ref": "common.json#/definitions/pathMarkup",
+          "$ref": "common.json#/definitions/jsonpointer",
           "description": "Workflow expression that selects a state data element to which the action results should be set to. If not specified, denote, the top-level state data element"
         }
       },

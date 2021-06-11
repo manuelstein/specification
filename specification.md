@@ -5232,29 +5232,25 @@ You can define the names of secrets via the [Workflow top-level "secrets" proper
 for example:
 
 ```json
-"secrets": {
-  "account_name": "personalaccountname",
-  "account_key": "c3VwZXItc2VjcmV0",
-}
+"secrets": ["MY_ACCOUNT", "MY_PASSWORD", "urn:example:tenant:accessToken"]
 ```
 
-If secrets are defined in a Workflow definition, runtimes must assure to provide their values
-during Workflow execution.
+If secrets are only named in a Workflow definition, runtimes must assure to 
+provide their values during execution.
 
-Secrets can be used only in [Workflow expressions](#Workflow-Expressions) under the `SECRETS` namespace. 
-This is reserved namespace that should only be allowed for values defined by the `secrets` property.
-
-Here is an example on how to use secrets and pass them as arguments to a function invocation:
+Secrets can be used only in [workflow expressions](#Workflow-Expressions).
+The default expression language JQ provides secrets through the reserved 
+`$SECRETS` variable. Here is an example on how to use secrets and pass them as 
+arguments to a function invocation:
 
 ```json
 {
   "refName": "uploadToAzure",
     "arguments": {
-      "account": "${ $SECRETS.account_name }",
-      "account-key": "${ $SECRETS.account_key }",
-      ...
+      "user": "${ $SECRETS.MY_ACCOUNT }",
+      "pass": "${ $SECRETS.MY_PASSWORD }",
+      "token": "${ $SECRETS.\"urn:example:tenant:accessToken\" }"
     }
-  
 }
 ```
 

@@ -1399,8 +1399,10 @@ refrains from evaluating it as a workflow expression.
 "foo": "$$fn{ this is text in a string starting with '$fn{' and ending with a single '}' }"
 ```
 
-The expression language has access to the context data to select/transform 
-content when processing the workflow expression.
+The expression language gives access to the state data to select or transform 
+the state data when processing the workflow expression. It also provides access 
+to [workflow secrets](#Workflow-secrets) and 
+[workflow constants](#Workflow-constants).
 
 Note that different data filters play a big role as to which parts of the 
 states data are to be used when the expression is evaluated during workflow
@@ -1416,8 +1418,11 @@ parameters if you want to set them using an expression.
 The default expression language is [jq](https://stedolan.github.io/jq/).
 This version of the workflow language supports jq [version 1.6](https://github.com/stedolan/jq/releases/tag/jq-1.6) syntax.
 You can find more information on jq v1.6 in its [manual](https://stedolan.github.io/jq/manual/v1.6/).
-The workflow data that is accessible to the jq expression is passed as the single 
-input document to the jq processor.
+
+JQ expressions provide the state data as the root document (`.`). 
+Global [secrets](#Workflow-secrets) and [constants](#Workflow-constants) can be 
+accessed through the jq variables `$SECRETS` and `$CONST` respectively, which 
+makes them reserved variable names in JQ expressions.
 
 Serverless Workflow does not mandate the use of jq and it is possible to use an 
 expression language of your choice with the restriction that a single one must 

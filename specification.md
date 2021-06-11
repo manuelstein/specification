@@ -1579,7 +1579,7 @@ In our workflow model we can define our reusable expression function:
 "functions": [
   { 
     "name": "IsAdultApplicant",
-    "operation": ".applicant | .age > 18",
+    "operation": "${.applicant | .age > 18}",
     "type": "expression"
   }
 ]
@@ -1592,7 +1592,7 @@ Its return type is boolean, so it makes a useful condition:
 ```json
 {
   "dataConditions": [ {
-    "condition": "${fn{IsAdultApplicant}}",
+    "condition": "$fn{IsAdultApplicant}",
     "transition": "StartApplication"
   }]
 }
@@ -3366,7 +3366,7 @@ transition: StartApplication
 
 Switch state data conditions specify a data-based condition statement, which causes a transition to another 
 workflow state if evaluated to true.
-The `condition` property of the condition defines an expression (e.g., `$.applicant | .age > 18`), which selects
+The `condition` property of the condition defines an expression (e.g., `${.applicant | .age > 18}`), which selects
 parts of the state data input. The condition must evaluate to `true` or `false`.
 
 If the condition is evaluated to `true`, you can specify either the `transition` or `end` definitions
